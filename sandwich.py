@@ -48,6 +48,27 @@ class Pool:
         """
         return self.reserve_b / self.reserve_a
 
+    def price_impact(self, amount_b):
+        """Relative spot-price move caused by a hypothetical buy of
+        ``amount_b`` token B. The pool is not modified.
+
+        >>> pool = Pool(Fraction(100), Fraction(200_000))
+        >>> pool.price_impact(Fraction(2000))
+        Fraction(200697, 10000000)
+        >>> pool.price_impact(Fraction(0))
+        Fraction(0, 1)
+        >>> pool.reserve_a  # unchanged
+        Fraction(100, 1)
+        """
+        amount_b = Fraction(amount_b)
+        if amount_b < 0:
+            raise ValueError("amount must be non-negative")
+        if amount_b == 0:
+            return Fraction(0)
+        out = get_amount_out(amount_b, self.reserve_b, self.reserve_a)
+        new_price = (self.reserve_b + amount_b) / (self.reserve_a - out)
+        return (new_price - self.spot_price()) / self.spot_price()
+
     def copy(self):
         """An independent pool with the same reserves."""
         return Pool(self.reserve_a, self.reserve_b)
